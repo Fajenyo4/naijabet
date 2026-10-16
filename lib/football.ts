@@ -122,6 +122,7 @@ export async function refreshStalest(maxRequests: number): Promise<string[]> {
   for (const { code, age } of ages) {
     if (used >= maxRequests) break;
     try {
+      await assertNotThrottled();
       if (!(await previousSeason(code, key, false))) {
         used++;
         await previousSeason(code, key, true);
@@ -131,8 +132,8 @@ export async function refreshStalest(maxRequests: number): Promise<string[]> {
       await refreshCurrent(code, key);
       log.push(`${code} refreshed (was ${age === Infinity ? "missing" : Math.round(age / 60_000) + " min old"})`);
     } catch (e) {
-      log.push(`${code} failed: ${e instanceof Error ? e.message : e}`);
-      break; // Most likely rate-limited: stop and let the next run continue.
+      log.push(`${code} ${e instanceof ThrottledError ? "skipped" : "failed"}: ${e instanceof Error ? e.message : e}`);
+      break; // Rate-limited or API down: stop and let the next run continue.
     }
   }
   return log;
@@ -161,12 +162,56 @@ interface ApiMatch {
   score: ApiScore;
 }
 
+// --- Rate limiting ------------------------------------------------------------
+// football-data.org reports its limit on every response:
+//   X-Requests-Available-Minute (older APIs: X-RequestsAvailable): calls left in this minute
+//   X-RequestCounter-Reset: seconds until that allowance resets
+// When the allowance runs out (or a 429 arrives) we store a "don't call before" time in
+// Blobs, so every page render and the scheduled refresher back off together.
+const THROTTLE_KEY = "throttle";
+const KEEP_SPARE = 1; // stop at 1 call left, so a burst can't tip us into 429s
+let throttleUntil = 0; // this instance's copy of the shared back-off time
+
+export class ThrottledError extends Error {}
+
+async function assertNotThrottled() {
+  if (Date.now() >= throttleUntil) {
+    const shared = await readJSON<{ until: string }>(THROTTLE_KEY);
+    if (shared) throttleUntil = Math.max(throttleUntil, Date.parse(shared.until));
+  }
+  if (Date.now() < throttleUntil) {
+    throw new ThrottledError(`backing off for ${Math.ceil((throttleUntil - Date.now()) / 1000)}s (rate limit)`);
+  }
+}
+
+async function backOff(seconds: number, reason: string) {
+  throttleUntil = Date.now() + seconds * 1000;
+  await writeJSON(THROTTLE_KEY, { until: new Date(throttleUntil).toISOString(), reason });
+  console.warn(`[football-data] backing off ${seconds}s: ${reason}`);
+}
+
+export function readRateLimit(headers: Headers) {
+  const num = (v: string | null) => (v !== null && v.trim() !== "" && Number.isFinite(Number(v)) ? Number(v) : null);
+  return {
+    available: num(headers.get("x-requests-available-minute") ?? headers.get("x-requestsavailable")),
+    resetSeconds: num(headers.get("x-requestcounter-reset")),
+  };
+}
+
 async function fetchSeason(code: string, season: number, key: string): Promise<Match[]> {
+  await assertNotThrottled();
   const res = await fetch(`https://api.football-data.org/v4/competitions/${code}/matches?season=${season}`, {
     headers: { "X-Auth-Token": key },
     cache: "no-store", // Freshness is managed by the stored copy (see FRESH_FOR_MS).
     signal: AbortSignal.timeout(8000), // A slow provider must never hang a page.
   });
+  const { available, resetSeconds } = readRateLimit(res.headers);
+  console.log(`[football-data] ${code} ${season}: HTTP ${res.status}, calls left this minute=${available ?? "?"}, resets in ${resetSeconds ?? "?"}s`);
+  if (res.status === 429) {
+    await backOff(resetSeconds ?? 60, `429 from API (${code} ${season})`);
+    throw new ThrottledError(`football-data.org rate limit hit (${code} ${season})`);
+  }
+  if (available !== null && available <= KEEP_SPARE) await backOff(resetSeconds ?? 60, `only ${available} call(s) left this minute`);
   if (!res.ok) throw new Error(`football-data.org responded ${res.status} for ${code} ${season}`);
   const body = (await res.json()) as { matches?: ApiMatch[] };
   return (body.matches ?? []).flatMap(normalise);
