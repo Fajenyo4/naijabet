@@ -1,4 +1,4 @@
-# NaijaBet AI ⚽
+# NaijaBet ⚽
 
 Data-driven football predictions for Nigerian punters (Bet9ja, SportyBet, etc.) covering the
 **Premier League, Champions League, La Liga, Serie A, Bundesliga, Ligue 1, Championship, Eredivisie and Primeira Liga**.

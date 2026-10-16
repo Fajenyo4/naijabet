@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ code: string }> }) {
   const comp = findCompetition((await params).code);
-  return { title: comp ? `${comp.name} predictions – NaijaBet AI` : "NaijaBet AI" };
+  return { title: comp ? `${comp.name} predictions – NaijaBet` : "NaijaBet" };
 }
 
 export default async function CompetitionPage({ params }: { params: Promise<{ code: string }> }) {

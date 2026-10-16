@@ -3,7 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NaijaBet AI – Football Predictions",
+  title: "NaijaBet – Football Predictions",
   description:
     "Data-driven football predictions for the Premier League, Champions League and top European leagues: 1X2, double chance, over/under, GG/NG and correct score probabilities.",
   icons: { icon: "/favicon.svg" },
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="header">
           <div className="container header-inner">
             <Link href="/" className="brand">
-              <span className="brand-dot">⚽</span> NaijaBet AI
+              <span className="brand-dot">⚽</span> NaijaBet
             </Link>
             <span className="badge-18">18+ · Bet responsibly</span>
           </div>
