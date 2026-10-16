@@ -25,7 +25,7 @@ export default async function CompetitionView({ code }: { code: string }) {
           <strong>Demo mode – simulated data.</strong>{" "}
           {board.error
             ? `Live data unavailable right now (${board.error}).`
-            : <>No API key configured. Add a free <code>FOOTBALL_DATA_API_KEY</code> from football-data.org in Vercel to switch to real fixtures and results.</>}{" "}
+            : <>No API key configured. Add a free <code>FOOTBALL_DATA_API_KEY</code> from football-data.org in your hosting settings (Netlify) to switch to real fixtures and results.</>}{" "}
           Teams below are real names but results are made up — do not bet on these.
         </div>
       ) : (
