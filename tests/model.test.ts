@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { backtest, buildRatings, expectedValue, marketWon, predict, recentForm, scoreMatrix, type Match, type Team } from "../lib/model.ts";
+import { backtest, pickSafe, buildRatings, expectedValue, marketWon, predict, recentForm, scoreMatrix, type Match, type Team } from "../lib/model.ts";
 
 const team = (id: number, name: string): Team => ({ id, name, shortName: name });
 const STRONG = team(1, "Strong"), WEAK = team(2, "Weak"), MID = team(3, "Mid"), MID2 = team(4, "Mid2");
@@ -80,4 +80,17 @@ test("backtest beats the naive baseline on a league with real strength gaps", ()
   const bt = backtest(league(), 20);
   assert.ok(bt);
   assert.ok(bt.brier < bt.baselineBrier, JSON.stringify(bt));
+});
+
+test("safe pick is the longest-priced market still rated 80%+", () => {
+  const mk = (key: string, p: number) => ({ key, label: key, group: "Goals" as const, p });
+  assert.equal(pickSafe([mk("a", 0.95), mk("b", 0.82), mk("c", 0.6)])?.key, "b");
+  assert.equal(pickSafe([mk("a", 0.7), mk("b", 0.5)]), null);
+});
+
+test("backtest tracks safe picks consistently", () => {
+  const bt = backtest(league(), 20)!;
+  assert.ok(bt.safeHits <= bt.safePicks && bt.safePicks <= bt.matches);
+  // Every winning safe pick pays fair odds between 1 and 1.25 (p >= 0.8).
+  assert.ok(bt.safeOddsWon >= bt.safeHits && bt.safeOddsWon <= bt.safeHits * 1.25 + 1e-9);
 });

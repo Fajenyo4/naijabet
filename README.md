@@ -11,6 +11,7 @@ For every upcoming fixture it shows:
 - **Fair odds** for each market. Type in the bookie's odds and the app tells you if the bet has **value**
 - Last-5 **form** for both teams
 - An **accumulator slip** that shows the real combined chance of all legs landing
+- **Safe Picks** (`/safe`): only bets rated 80%+, with their real past hit rate and estimated return
 - A **track record**, calculated by replaying past matches walk-forward, so you can see how accurate the model really is
 
 ## How the model works

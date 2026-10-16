@@ -132,6 +132,13 @@ function MatchCard({ f, selectedKey, onToggle }: { f: Fixture; selectedKey?: str
         <span className={`conf ${p.confidence}`}>{p.confidence}</span>
       </div>
 
+      {p.safePick && (
+        <div className="muted small" style={{ marginTop: 8 }}>
+          ⭐ Safe pick: <b style={{ color: "var(--text)" }}>{p.safePick.label}</b> · {pct(p.safePick.p)} · fair odds{" "}
+          {odds(p.safePick.p)}
+        </div>
+      )}
+
       <div className="row-actions">
         <button className={`btn ${selectedKey === p.bestPick.key ? "on" : ""}`} onClick={() => onToggle(p.bestPick)}>
           {selectedKey === p.bestPick.key ? "✓ In slip" : "+ Add best pick to slip"}

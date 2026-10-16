@@ -59,6 +59,7 @@ export interface Prediction {
   markets: Market[];
   correctScores: { score: string; p: number }[];
   bestPick: Market;
+  safePick: Market | null;
   verdict: string;
   confidence: "High" | "Medium" | "Low";
   dataQuality: "Good" | "Limited";
@@ -224,6 +225,7 @@ export function predict(match: Match, ratings: Ratings): Prediction {
   correctScores.sort((x, y) => y.p - x.p);
 
   const bestPick = pickBest(markets);
+  const safePick = pickSafe(markets);
   const top = Math.max(pHome, pDraw, pAway);
   const verdict =
     top === pHome ? `${hn} win` : top === pAway ? `${an} win` : "Draw";
@@ -240,6 +242,7 @@ export function predict(match: Match, ratings: Ratings): Prediction {
     markets,
     correctScores: correctScores.slice(0, 6),
     bestPick,
+    safePick,
     verdict,
     confidence,
     dataQuality,
@@ -251,6 +254,18 @@ export function pickBest(markets: Market[]): Market {
   const eligible = markets.filter((mk) => 1 / mk.p >= MIN_PICK_ODDS);
   const pool = eligible.length ? eligible : markets;
   return pool.reduce((best, mk) => (mk.p > best.p ? mk : best));
+}
+
+export const SAFE_THRESHOLD = 0.8;
+
+/**
+ * Among markets the model rates at SAFE_THRESHOLD or better, the one that pays most
+ * (i.e. the least-likely of the "safe" options). Null when nothing clears the bar.
+ */
+export function pickSafe(markets: Market[], threshold = SAFE_THRESHOLD): Market | null {
+  const safe = markets.filter((mk) => mk.p >= threshold);
+  if (!safe.length) return null;
+  return safe.reduce((best, mk) => (mk.p < best.p ? mk : best));
 }
 
 export function fairOdds(p: number): number {
@@ -282,6 +297,9 @@ export interface Backtest {
   bestPickHitRate: number;
   brier: number; // lower is better
   baselineBrier: number; // always predicting the league's average H/D/A rates
+  safePicks: number; // matches where the model had an 80%+ pick
+  safeHits: number;
+  safeOddsWon: number; // sum of fair odds of winning safe picks, for return estimates
 }
 
 /**
@@ -294,6 +312,7 @@ export function backtest(matches: Match[], minHistory = 60, maxTested = 250): Ba
   const tested = done.slice(Math.max(minHistory, done.length - maxTested));
 
   let hits = 0, pickHits = 0, brier = 0, baseBrier = 0;
+  let safePicks = 0, safeHits = 0, safeOddsWon = 0;
   let cachedDay = "";
   let ratings: Ratings | null = null;
   for (const m of tested) {
@@ -308,6 +327,13 @@ export function backtest(matches: Match[], minHistory = 60, maxTested = 250): Ba
     const probs = [pred.pHome, pred.pDraw, pred.pAway];
     if (probs.indexOf(Math.max(...probs)) === outcome) hits++;
     if (marketWon(pred.bestPick.key, hg, ag)) pickHits++;
+    if (pred.safePick) {
+      safePicks++;
+      if (marketWon(pred.safePick.key, hg, ag)) {
+        safeHits++;
+        safeOddsWon += 1 / pred.safePick.p;
+      }
+    }
     brier += probs.reduce((s, p, i) => s + (p - (i === outcome ? 1 : 0)) ** 2, 0);
 
     // Baseline: historical H/D/A frequencies from matches before this one.
@@ -324,6 +350,9 @@ export function backtest(matches: Match[], minHistory = 60, maxTested = 250): Ba
     bestPickHitRate: pickHits / n,
     brier: brier / n,
     baselineBrier: baseBrier / n,
+    safePicks,
+    safeHits,
+    safeOddsWon,
   };
 }
 

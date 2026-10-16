@@ -122,3 +122,6 @@ button, input { font: inherit; color: inherit; }
 .how h3 { font-size: 15px; margin: 0 0 8px; }
 .how ol { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
 .how li { margin-bottom: 6px; }
+
+.safe-teams { font-weight: 700; font-size: 16px; }
+.safe-p { font-size: 22px; font-weight: 800; color: #42d392; }
