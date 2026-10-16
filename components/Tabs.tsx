@@ -37,6 +37,9 @@ export default function Tabs() {
             <Link
               key={t.href}
               href={t.href}
+              // Prefetching every tab rendered all leagues for each visitor (and spent the
+              // data provider's rate limit); the tap-time loading bar makes it unnecessary.
+              prefetch={false}
               className={`tab ${active ? "active" : ""}`}
               onClick={(e) => {
                 if (e.metaKey || e.ctrlKey || e.shiftKey || t.href.toUpperCase() === current) return;

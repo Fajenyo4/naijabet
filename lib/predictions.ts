@@ -25,11 +25,17 @@ export interface Board {
 const BOARD_CACHE_SECONDS = 60 * 60 * 3;
 
 export async function getBoard(code: CompetitionCode): Promise<Board> {
+  const t0 = Date.now();
   const data = await getCompetitionData(code);
-  if (data.source !== "live") return computeBoard(code, data);
-  return unstable_cache(async () => computeBoard(code, data), ["board-v2", code, data.fetchedAt], {
-    revalidate: BOARD_CACHE_SECONDS,
-  })();
+  const t1 = Date.now();
+  const board =
+    data.source !== "live"
+      ? await computeBoard(code, data)
+      : await unstable_cache(async () => computeBoard(code, data), ["board-v2", code, data.fetchedAt], {
+          revalidate: BOARD_CACHE_SECONDS,
+        })();
+  console.log(`[board] ${code} ${data.source} data=${t1 - t0}ms board=${Date.now() - t1}ms`);
+  return board;
 }
 
 async function computeBoard(code: CompetitionCode, data: CompetitionData): Promise<Board> {

@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <header className="header">
           <div className="container header-inner">
-            <Link href="/" className="brand">
+            <Link href="/" prefetch={false} className="brand">
               <span className="brand-dot">⚽</span> NaijaBet
             </Link>
             <span className="badge-18">18+ · Bet responsibly</span>

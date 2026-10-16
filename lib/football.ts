@@ -165,6 +165,7 @@ async function fetchSeason(code: string, season: number, key: string): Promise<M
   const res = await fetch(`https://api.football-data.org/v4/competitions/${code}/matches?season=${season}`, {
     headers: { "X-Auth-Token": key },
     cache: "no-store", // Freshness is managed by the stored copy (see FRESH_FOR_MS).
+    signal: AbortSignal.timeout(8000), // A slow provider must never hang a page.
   });
   if (!res.ok) throw new Error(`football-data.org responded ${res.status} for ${code} ${season}`);
   const body = (await res.json()) as { matches?: ApiMatch[] };
