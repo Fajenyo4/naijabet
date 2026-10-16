@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { COMPETITIONS, findCompetition, type CompetitionCode } from "@/lib/football";
+import { findCompetition, type CompetitionCode } from "@/lib/football";
 import { getBoard } from "@/lib/predictions";
 import BoardView from "./BoardView";
 
@@ -12,15 +11,6 @@ export default async function CompetitionView({ code }: { code: string }) {
 
   return (
     <>
-      <nav className="tabs">
-        <Link href="/safe" className="tab">⭐ Safe Picks</Link>
-        {COMPETITIONS.map((c) => (
-          <Link key={c.code} href={`/c/${c.code}`} className={`tab ${c.code === comp.code ? "active" : ""}`}>
-            {c.name}
-          </Link>
-        ))}
-      </nav>
-
       <section className="hero">
         <div className="muted small">{comp.country}</div>
         <h1>{comp.name} predictions</h1>

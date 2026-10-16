@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { COMPETITIONS, findCompetition, type CompetitionCode } from "@/lib/football";
+import { findCompetition, type CompetitionCode } from "@/lib/football";
 import { getBoard, type Board } from "@/lib/predictions";
 import { SAFE_THRESHOLD } from "@/lib/model";
 
@@ -48,13 +47,6 @@ export default async function SafePicksPage() {
 
   return (
     <>
-      <nav className="tabs">
-        <Link href="/safe" className="tab active">⭐ Safe Picks</Link>
-        {COMPETITIONS.map((c) => (
-          <Link key={c.code} href={`/c/${c.code}`} className="tab">{c.name}</Link>
-        ))}
-      </nav>
-
       <section className="hero">
         <div className="muted small">Premier League · Champions League · La Liga · Serie A</div>
         <h1>Safe Picks: {Math.round(SAFE_THRESHOLD * 100)}%+ chance</h1>

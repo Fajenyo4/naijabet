@@ -313,13 +313,16 @@ export function backtest(matches: Match[], minHistory = 60, maxTested = 250): Ba
 
   let hits = 0, pickHits = 0, brier = 0, baseBrier = 0;
   let safePicks = 0, safeHits = 0, safeOddsWon = 0;
-  let cachedDay = "";
+  // Ratings are refitted once per week (as of the start of that week): far cheaper
+  // than refitting every match day, and still never uses a result from the future.
+  const WEEK = 7 * DAY;
+  let cachedWeek = -1;
   let ratings: Ratings | null = null;
   for (const m of tested) {
-    const day = m.utcDate.slice(0, 10);
-    if (day !== cachedDay) {
-      ratings = buildRatings(done, new Date(`${day}T00:00:00Z`));
-      cachedDay = day;
+    const week = Math.floor(new Date(m.utcDate).getTime() / WEEK);
+    if (week !== cachedWeek) {
+      ratings = buildRatings(done, new Date(week * WEEK));
+      cachedWeek = week;
     }
     const pred = predict(m, ratings!);
     const hg = m.homeGoals!, ag = m.awayGoals!;

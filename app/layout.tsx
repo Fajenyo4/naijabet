@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import Tabs from "@/components/Tabs";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,7 +24,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <span className="badge-18">18+ · Bet responsibly</span>
           </div>
         </header>
-        <main className="container">{children}</main>
+        <main className="container">
+          <Tabs />
+          {children}
+        </main>
         <footer className="footer">
           <div className="container">
             <p>
