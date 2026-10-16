@@ -38,7 +38,10 @@ export function currentSeasonStartYear(now = new Date()): number {
 export async function getCompetitionData(code: CompetitionCode): Promise<CompetitionData> {
   const key = process.env.FOOTBALL_DATA_API_KEY;
   const fetchedAt = new Date().toISOString();
-  if (!key) return { matches: demoMatches(code), source: "demo", fetchedAt };
+  if (!key) {
+    console.warn("[football-data] FOOTBALL_DATA_API_KEY is not set; serving demo data");
+    return { matches: demoMatches(code), source: "demo", fetchedAt };
+  }
 
   const season = currentSeasonStartYear();
   try {
@@ -49,6 +52,7 @@ export async function getCompetitionData(code: CompetitionCode): Promise<Competi
     ]);
     return { matches: [...previous, ...current], source: "live", fetchedAt };
   } catch (e) {
+    console.error(`[football-data] ${code}: falling back to demo data`, e);
     return {
       matches: demoMatches(code),
       source: "demo",
