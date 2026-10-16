@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Board, Fixture } from "@/lib/predictions";
 import type { FormResult, Market } from "@/lib/model";
 
 const TZ = "Africa/Lagos";
 const dayFmt = new Intl.DateTimeFormat("en-NG", { timeZone: TZ, weekday: "long", day: "numeric", month: "short" });
 const timeFmt = new Intl.DateTimeFormat("en-NG", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
+
+const SLIP_KEY = "naijabet-slip";
 
 interface SlipLeg {
   matchId: number;
@@ -16,6 +18,25 @@ interface SlipLeg {
 
 export default function BoardView({ board }: { board: Board }) {
   const [slip, setSlip] = useState<SlipLeg[]>([]);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  // Keep the slip while moving between leagues (for this browser tab only).
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(SLIP_KEY);
+      if (saved) setSlip(JSON.parse(saved));
+    } catch {}
+    setLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      sessionStorage.setItem(SLIP_KEY, JSON.stringify(slip));
+    } catch {}
+    if (slip.length === 0) setSheetOpen(false);
+  }, [slip, loaded]);
+  const remove = (id: number) => setSlip((s) => s.filter((l) => l.matchId !== id));
 
   const days = useMemo(() => {
     const groups = new Map<string, Fixture[]>();
@@ -56,7 +77,9 @@ export default function BoardView({ board }: { board: Board }) {
         ))}
       </div>
       <aside className="side">
-        <Slip slip={slip} onRemove={(id) => setSlip((s) => s.filter((l) => l.matchId !== id))} />
+        <div className="desktop-only">
+          <Slip slip={slip} onRemove={remove} />
+        </div>
         <div className="card how">
           <h3>How to use it</h3>
           <ol>
@@ -67,6 +90,26 @@ export default function BoardView({ board }: { board: Board }) {
           </ol>
         </div>
       </aside>
+
+      {/* Phones: the sidebar sits below every match, so show the slip as a bar pinned to the bottom. */}
+      {slip.length > 0 && (
+        <div className="mobile-slip">
+          {sheetOpen && (
+            <div className="sheet">
+              <Slip slip={slip} onRemove={remove} />
+              <button className="btn" style={{ width: "100%", marginTop: 8 }} onClick={() => setSlip([])}>
+                Clear slip
+              </button>
+            </div>
+          )}
+          <button className="slip-bar" onClick={() => setSheetOpen((o) => !o)} aria-expanded={sheetOpen}>
+            <span>
+              🧾 Slip ({slip.length}) · {pctFine(slip.reduce((a, l) => a * l.market.p, 1))} chance
+            </span>
+            <b>{sheetOpen ? "Hide ▾" : "View ▴"}</b>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
