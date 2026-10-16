@@ -142,3 +142,11 @@ button, input { font: inherit; color: inherit; }
   .sheet .card { margin: 0; border: 0; }
   body:has(.mobile-slip) .footer { padding-bottom: 90px; }
 }
+.tab-spinner { width: 10px; height: 10px; margin: 0 0 0 6px; }
+.bookies { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; margin-top: 8px; }
+.bookies .btn { text-align: center; font-size: 12px; padding: 7px 6px; }
+.nav-progress { position: fixed; top: 0; left: 0; height: 3px; width: 100%; z-index: 50; background: var(--green); transform-origin: left; animation: nav-progress 8s cubic-bezier(0.1, 0.7, 0.2, 1) forwards; }
+@keyframes nav-progress { from { transform: scaleX(0.05); } to { transform: scaleX(0.92); } }
+.nav-loading-msg { display: flex; align-items: center; gap: 2px; background: var(--green-soft); border: 1px solid rgba(0, 179, 107, 0.35); color: #7ee2b4; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+main > * { transition: opacity 0.15s; }
+body:has(.nav-loading) main > :not(.tabs):not(.nav-loading):not(.loading) { opacity: 0.3; pointer-events: none; }

@@ -1,6 +1,7 @@
 import { findCompetition, type CompetitionCode } from "@/lib/football";
 import { getBoard, type Board } from "@/lib/predictions";
 import { SAFE_THRESHOLD } from "@/lib/model";
+import PageReady from "@/components/PageReady";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Safe Picks (80%+) – NaijaBet" };
@@ -131,6 +132,7 @@ export default async function SafePicksPage() {
           <li>One loss wipes out about four wins at these prices, so keep stakes small and even.</li>
         </ol>
       </div>
+      <PageReady id="safe" />
     </>
   );
 }

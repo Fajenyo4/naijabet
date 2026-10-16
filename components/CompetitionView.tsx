@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { findCompetition, type CompetitionCode } from "@/lib/football";
 import { getBoard } from "@/lib/predictions";
 import BoardView from "./BoardView";
+import PageReady from "./PageReady";
 
 export default async function CompetitionView({ code }: { code: string }) {
   const comp = findCompetition(code);
@@ -55,6 +56,7 @@ export default async function CompetitionView({ code }: { code: string }) {
       )}
 
       <BoardView board={board} />
+      <PageReady id={comp.code} />
     </>
   );
 }

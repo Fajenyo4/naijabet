@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Board, Fixture } from "@/lib/predictions";
 import type { FormResult, Market } from "@/lib/model";
+import { BOOKIES, bookieMarket } from "@/lib/bookies";
 
 const TZ = "Africa/Lagos";
 const dayFmt = new Intl.DateTimeFormat("en-NG", { timeZone: TZ, weekday: "long", day: "numeric", month: "short" });
@@ -314,8 +315,52 @@ function Slip({ slip, onRemove }: { slip: SlipLeg[]; onRemove: (matchId: number)
               Long accas look attractive but usually lose — bookies add their margin to every leg.
             </p>
           )}
+          <PlaceBet slip={slip} p={p} />
         </>
       )}
+    </div>
+  );
+}
+
+function slipText(slip: SlipLeg[], p: number) {
+  const lines = slip.map((l, i) => `${i + 1}. ${l.fixture} — ${bookieMarket(l.market.key)} (${pct(l.market.p)})`);
+  return [`NaijaBet slip (${slip.length} pick${slip.length > 1 ? "s" : ""})`, ...lines, `Chance all win: ${pctFine(p)} · Fair odds: ${odds(p)}`].join("\n");
+}
+
+function PlaceBet({ slip, p }: { slip: SlipLeg[]; p: number }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    const text = slipText(slip, p);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Older browsers / non-HTTPS: fall back to a hidden textarea.
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="place-bet">
+      <div className="muted small" style={{ margin: "12px 0 6px" }}>
+        Place it: copy your picks, open your bookie, and add the same selections to your betslip.
+      </div>
+      <button className="btn primary" style={{ width: "100%" }} onClick={copy}>
+        {copied ? "✓ Copied" : "📋 Copy slip"}
+      </button>
+      <div className="bookies">
+        {BOOKIES.map((b) => (
+          <a key={b.name} className="btn" href={b.url} target="_blank" rel="noopener noreferrer nofollow">
+            {b.name} ↗
+          </a>
+        ))}
+      </div>
+      <div className="muted small" style={{ marginTop: 6 }}>18+ · Not affiliated with any bookmaker.</div>
     </div>
   );
 }
