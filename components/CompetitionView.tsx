@@ -16,18 +16,18 @@ export default async function CompetitionView({ code }: { code: string }) {
         <div className="muted small">{comp.country}</div>
         <h1>{comp.name} predictions</h1>
         <p>
-          Every upcoming fixture rated from each team's recent results — weighted towards the last few weeks and
+          Every upcoming fixture rated from each team's recent results, weighted towards the last few weeks and
           adjusted for opponent strength. Enter your Bet9ja / SportyBet odds to see if a bet has value.
         </p>
       </section>
 
       {board.source === "demo" ? (
         <div className="notice demo">
-          <strong>Demo mode – simulated data.</strong>{" "}
+          <strong>Demo mode: simulated data.</strong>{" "}
           {board.error
             ? "The live data provider is busy right now. Real fixtures will appear within a few minutes, so refresh shortly."
             : <>No API key configured. Add a free <code>FOOTBALL_DATA_API_KEY</code> from football-data.org in your hosting settings (Netlify) to switch to real fixtures and results.</>}{" "}
-          Teams below are real names but results are made up — do not bet on these.
+          Teams below are real names but results are made up, so do not bet on these.
         </div>
       ) : (
         <div className="notice live">
@@ -40,10 +40,10 @@ export default async function CompetitionView({ code }: { code: string }) {
           <div className="stat">
             <div className="k">Result (1X2) hit rate</div>
             <div className="v">{pct(bt.resultHitRate)}</div>
-            <div className="s">last {bt.matches} matches, walk-forward</div>
+            <div className="s">last {bt.matches} matches, each tested before it was played</div>
           </div>
           <div className="stat">
-            <div className="k">Best-pick hit rate</div>
+            <div className="k">Best pick hit rate</div>
             <div className="v">{pct(bt.bestPickHitRate)}</div>
             <div className="s">min. fair odds 1.30</div>
           </div>

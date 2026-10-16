@@ -4,7 +4,7 @@ import { SAFE_THRESHOLD } from "@/lib/model";
 import PageReady from "@/components/PageReady";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Safe Picks (80%+) – NaijaBet" };
+export const metadata = { title: "Safe Picks (80%+) | NaijaBet" };
 
 // Limited to four competitions: each costs two API calls and the free tier allows 10 a minute.
 const SAFE_COMPETITIONS: CompetitionCode[] = ["PL", "CL", "PD", "SA"];
@@ -60,12 +60,12 @@ export default async function SafePicksPage() {
 
       {demo ? (
         <div className="notice demo">
-          <strong>Demo mode – simulated data.</strong> Live data isn&apos;t available right now, so these picks and the
-          track record come from made-up results. Do not bet on them.
+          <strong>Demo mode: simulated data.</strong> Live data is not available right now, so these picks and the
+          track record come from made up results. Do not bet on them.
         </div>
       ) : (
         unavailable.length > 0 && (
-          <div className="notice demo">{unavailable.join(", ")} couldn&apos;t be loaded right now and are left out. Refresh in a minute.</div>
+          <div className="notice demo">{unavailable.join(", ")} could not be loaded right now and are left out. Refresh in a minute.</div>
         )
       )}
 
@@ -74,17 +74,17 @@ export default async function SafePicksPage() {
           <div className="stat">
             <div className="k">Safe picks that won</div>
             <div className="v">{Math.round(hitRate * 100)}%</div>
-            <div className="s">{hits} of {n} past picks, walk-forward</div>
+            <div className="s">{hits} of {n} past picks, each tested before it was played</div>
           </div>
           <div className="stat">
             <div className="k">Typical odds</div>
-            <div className="v">{hits ? (oddsWon / hits).toFixed(2) : "–"}</div>
+            <div className="v">{hits ? (oddsWon / hits).toFixed(2) : "None yet"}</div>
             <div className="s">fair odds of the winning picks</div>
           </div>
           <div className="stat">
-            <div className="k">Est. result per ₦1,000 staked</div>
+            <div className="k">Estimated result per ₦1,000 staked</div>
             <div className="v" style={{ color: estReturn >= 0 ? "#42d392" : "var(--red)" }}>
-              {estReturn >= 0 ? "+" : "−"}₦{Math.abs(Math.round(estReturn * 1000)).toLocaleString("en-NG")}
+              ₦{Math.abs(Math.round(estReturn * 1000)).toLocaleString("en-NG")} {estReturn >= 0 ? "profit" : "loss"}
             </div>
             <div className="s">singles at typical bookie odds (~{Math.round(BOOKIE_MARGIN * 100)}% margin)</div>
           </div>
@@ -93,7 +93,7 @@ export default async function SafePicksPage() {
 
       {picks.length === 0 ? (
         <div className="empty">
-          No match has an {Math.round(SAFE_THRESHOLD * 100)}%+ pick in the next 10 days. That&apos;s normal during
+          No match has an {Math.round(SAFE_THRESHOLD * 100)}%+ pick in the next 10 days. That is normal during
           international breaks. Check back closer to the weekend.
         </div>
       ) : (
@@ -128,7 +128,7 @@ export default async function SafePicksPage() {
         <h3>Read this before you stake</h3>
         <ol>
           <li>Back safe picks as <b>singles</b>. Five 80% picks in one accumulator land only about 1 time in 3.</li>
-          <li>If your bookie&apos;s odds are below the &quot;only worth it&quot; number, skip it. You&apos;re being underpaid.</li>
+          <li>If your bookie&apos;s odds are below the &quot;only worth it&quot; number, skip it. You are being underpaid.</li>
           <li>One loss wipes out about four wins at these prices, so keep stakes small and even.</li>
         </ol>
       </div>

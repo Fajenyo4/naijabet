@@ -213,7 +213,7 @@ export function predict(match: Match, ratings: Ratings): Prediction {
     { key: "U2.5", label: "Under 2.5 goals", group: "Goals", p: 1 - goals(2.5) },
     { key: "U3.5", label: "Under 3.5 goals", group: "Goals", p: 1 - goals(3.5) },
     { key: "GG", label: "Both teams score (GG)", group: "BTTS", p: btts },
-    { key: "NG", label: "Both teams score – No (NG)", group: "BTTS", p: 1 - btts },
+    { key: "NG", label: "Both teams score: No (NG)", group: "BTTS", p: 1 - btts },
     { key: "H0.5", label: `${hn} to score`, group: "Team goals", p: sumWhere(m, (h) => h > 0) },
     { key: "A0.5", label: `${an} to score`, group: "Team goals", p: sumWhere(m, (_h, a) => a > 0) },
     { key: "H1.5", label: `${hn} over 1.5 goals`, group: "Team goals", p: sumWhere(m, (h) => h > 1) },
@@ -221,7 +221,7 @@ export function predict(match: Match, ratings: Ratings): Prediction {
   ];
 
   const correctScores: { score: string; p: number }[] = [];
-  for (let h = 0; h <= 6; h++) for (let a = 0; a <= 6; a++) correctScores.push({ score: `${h}-${a}`, p: m[h][a] });
+  for (let h = 0; h <= 6; h++) for (let a = 0; a <= 6; a++) correctScores.push({ score: `${h}:${a}`, p: m[h][a] });
   correctScores.sort((x, y) => y.p - x.p);
 
   const bestPick = pickBest(markets);

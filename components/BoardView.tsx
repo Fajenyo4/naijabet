@@ -64,7 +64,7 @@ export default function BoardView({ board }: { board: Board }) {
       <div>
         {days.length === 0 && (
           <div className="empty">
-            No fixtures in the next 10 days for this competition (international break or off-season). Check another
+            No fixtures in the next 10 days for this competition (international break or off season). Check another
             league above.
           </div>
         )}
@@ -86,7 +86,7 @@ export default function BoardView({ board }: { board: Board }) {
           <ol>
             <li>Look at the <b>best pick</b> and its probability.</li>
             <li>Open <b>All markets</b> and type the odds Bet9ja / SportyBet is offering.</li>
-            <li>Only bet when the value is <span className="ev-pos">green</span> — the bookie is paying more than the true chance deserves.</li>
+            <li>Only bet when the value is <span className="ev-pos">green</span>, because the bookie is paying more than the true chance deserves.</li>
             <li>Keep accumulators short: every extra leg multiplies the risk.</li>
           </ol>
         </div>
@@ -129,7 +129,7 @@ function MatchCard({ f, selectedKey, onToggle }: { f: Fixture; selectedKey?: str
           {m.stage && m.stage !== "REGULAR_SEASON" ? ` · ${m.stage.replaceAll("_", " ").toLowerCase()}` : m.matchday ? ` · Matchday ${m.matchday}` : ""}
         </span>
         <span>
-          xG {p.xgHome.toFixed(2)} – {p.xgAway.toFixed(2)}
+          Expected goals {p.xgHome.toFixed(2)} v {p.xgAway.toFixed(2)}
           {p.dataQuality === "Limited" && <span className="warn"> · limited data</span>}
         </span>
       </div>
@@ -143,7 +143,7 @@ function MatchCard({ f, selectedKey, onToggle }: { f: Fixture; selectedKey?: str
           <Form results={f.homeForm} />
         </div>
         <div className="score-pred" title="Most likely correct score">
-          {top.score.replace("-", " – ")}
+          {top.score}
           <small>{pct(top.p)} likely</small>
         </div>
         <div>
@@ -246,13 +246,13 @@ function Markets({
                   <input
                     className="odds-in"
                     inputMode="decimal"
-                    placeholder="e.g. 1.85"
+                    placeholder="1.85"
                     value={bookie[mk.key] ?? ""}
                     onChange={(e) => setBookie((b) => ({ ...b, [mk.key]: e.target.value }))}
                   />
                 </td>
                 <td className={`num ${ev !== null && ev > 0.03 ? "ev-pos" : "ev-neg"}`}>
-                  {ev === null ? "–" : `${ev > 0 ? "+" : ""}${(ev * 100).toFixed(0)}%`}
+                  {ev === null ? "" : `${ev > 0 ? "+" : ""}${(ev * 100).toFixed(0)}%`}
                 </td>
                 <td>
                   <button
@@ -312,7 +312,7 @@ function Slip({ slip, onRemove }: { slip: SlipLeg[]; onRemove: (matchId: number)
           </div>
           {slip.length >= 4 && (
             <p className="warn small">
-              Long accas look attractive but usually lose — bookies add their margin to every leg.
+              Long accumulators look attractive but usually lose, because bookies add their margin to every leg.
             </p>
           )}
           <PlaceBet slip={slip} p={p} />
@@ -323,7 +323,7 @@ function Slip({ slip, onRemove }: { slip: SlipLeg[]; onRemove: (matchId: number)
 }
 
 function slipText(slip: SlipLeg[], p: number) {
-  const lines = slip.map((l, i) => `${i + 1}. ${l.fixture} — ${bookieMarket(l.market.key)} (${pct(l.market.p)})`);
+  const lines = slip.map((l, i) => `${i + 1}. ${l.fixture}: ${bookieMarket(l.market.key)} (${pct(l.market.p)})`);
   return [`NaijaBet slip (${slip.length} pick${slip.length > 1 ? "s" : ""})`, ...lines, `Chance all win: ${pctFine(p)} · Fair odds: ${odds(p)}`].join("\n");
 }
 
@@ -385,5 +385,5 @@ function pctFine(p: number) {
   return p < 0.1 ? `${(p * 100).toFixed(1)}%` : pct(p);
 }
 function odds(p: number) {
-  return p > 0 ? (1 / p).toFixed(2) : "–";
+  return p > 0 ? (1 / p).toFixed(2) : "";
 }
