@@ -25,13 +25,13 @@ export default async function CompetitionView({ code }: { code: string }) {
         <div className="notice demo">
           <strong>Demo mode – simulated data.</strong>{" "}
           {board.error
-            ? `Live data unavailable right now (${board.error}).`
+            ? "The live data provider is busy right now. Real fixtures will appear within a few minutes, so refresh shortly."
             : <>No API key configured. Add a free <code>FOOTBALL_DATA_API_KEY</code> from football-data.org in your hosting settings (Netlify) to switch to real fixtures and results.</>}{" "}
           Teams below are real names but results are made up — do not bet on these.
         </div>
       ) : (
         <div className="notice live">
-          Live data · {board.finishedCount} results analysed · refreshes automatically every few hours
+          Live data · {board.finishedCount} results analysed · updated {ago(board.fetchedAt)}
         </div>
       )}
 
@@ -63,4 +63,12 @@ export default async function CompetitionView({ code }: { code: string }) {
 
 function pct(x: number) {
   return `${Math.round(x * 100)}%`;
+}
+
+function ago(iso: string) {
+  const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const h = Math.round(min / 60);
+  return `${h} hour${h > 1 ? "s" : ""} ago`;
 }

@@ -1,8 +1,8 @@
 import { findCompetition } from "@/lib/football";
 import CompetitionView from "@/components/CompetitionView";
 
-// Render per request; the upstream API responses themselves are cached for 3h
-// (see REVALIDATE_SECONDS), so new results flow in automatically.
+// Render per request from stored data, which a scheduled function keeps fresh
+// (see lib/football.ts), so new results flow in automatically.
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ code: string }> }) {

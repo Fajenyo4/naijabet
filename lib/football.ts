@@ -1,4 +1,5 @@
 import type { Match, Team } from "./model";
+import { readJSON, writeJSON } from "./store";
 
 // Free tier of football-data.org covers all of these, including the Champions League.
 export const COMPETITIONS = [
@@ -19,9 +20,11 @@ export function findCompetition(code: string) {
   return COMPETITIONS.find((c) => c.code === code.toUpperCase());
 }
 
-// Data refreshes automatically: cached results are re-fetched at most every 3 hours,
-// so new results feed straight into the ratings without anyone redeploying.
-export const REVALIDATE_SECONDS = 60 * 60 * 3;
+// Visitors never call football-data.org directly when stored data exists: a scheduled
+// Netlify function (netlify/functions/refresh-data.mts) refreshes a few competitions
+// every 10 minutes, staying inside the free tier's 10-requests-a-minute limit.
+// Pages read the stored copy; they only call the API themselves when it is missing or old.
+export const FRESH_FOR_MS = 90 * 60_000;
 
 export interface CompetitionData {
   matches: Match[];
@@ -30,6 +33,14 @@ export interface CompetitionData {
   fetchedAt: string;
 }
 
+interface StoredCurrent {
+  matches: Match[];
+  fetchedAt: string;
+}
+
+const currentKey = (code: string) => `current/${code}`;
+const seasonKey = (code: string, season: number) => `season/${code}/${season}`;
+
 /** European seasons start in July/August; football-data.org names them by start year. */
 export function currentSeasonStartYear(now = new Date()): number {
   return now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
@@ -37,29 +48,94 @@ export function currentSeasonStartYear(now = new Date()): number {
 
 export async function getCompetitionData(code: CompetitionCode): Promise<CompetitionData> {
   const key = process.env.FOOTBALL_DATA_API_KEY;
-  const fetchedAt = new Date().toISOString();
   if (!key) {
     console.warn("[football-data] FOOTBALL_DATA_API_KEY is not set; serving demo data");
-    return { matches: demoMatches(code), source: "demo", fetchedAt };
+    return { matches: demoMatches(code), source: "demo", fetchedAt: new Date().toISOString() };
   }
 
-  const season = currentSeasonStartYear();
+  const stored = await readJSON<StoredCurrent>(currentKey(code));
+  if (stored && Date.now() - new Date(stored.fetchedAt).getTime() < FRESH_FOR_MS) {
+    return withPreviousSeason(code, stored, key);
+  }
   try {
-    // Current + previous season: enough history for ratings early in the season.
-    const [current, previous] = await Promise.all([
-      fetchSeason(code, season, key),
-      fetchSeason(code, season - 1, key).catch(() => [] as Match[]),
-    ]);
-    return { matches: [...previous, ...current], source: "live", fetchedAt };
+    return withPreviousSeason(code, await refreshCurrent(code, key), key);
   } catch (e) {
+    if (stored) {
+      // Rate-limited or API down: older real data beats simulated data.
+      console.warn(`[football-data] ${code}: refresh failed, serving data from ${stored.fetchedAt}`, e);
+      return withPreviousSeason(code, stored, key);
+    }
     console.error(`[football-data] ${code}: falling back to demo data`, e);
     return {
       matches: demoMatches(code),
       source: "demo",
       error: e instanceof Error ? e.message : String(e),
-      fetchedAt,
+      fetchedAt: new Date().toISOString(),
     };
   }
+}
+
+/** Fetches this season's fixtures and results and stores them. Throws on API errors. */
+export async function refreshCurrent(code: CompetitionCode, key: string): Promise<StoredCurrent> {
+  const fresh = { matches: await fetchSeason(code, currentSeasonStartYear(), key), fetchedAt: new Date().toISOString() };
+  await writeJSON(currentKey(code), fresh);
+  return fresh;
+}
+
+/**
+ * Last season never changes, so it is fetched once and kept. If it can't be fetched yet
+ * (e.g. rate-limited) ratings use this season alone and it is retried on a later request.
+ */
+async function previousSeason(code: CompetitionCode, key: string, fetchIfMissing: boolean): Promise<Match[] | null> {
+  const season = currentSeasonStartYear() - 1;
+  const stored = await readJSON<Match[]>(seasonKey(code, season));
+  if (stored || !fetchIfMissing) return stored;
+  try {
+    const matches = await fetchSeason(code, season, key);
+    await writeJSON(seasonKey(code, season), matches);
+    return matches;
+  } catch (e) {
+    console.warn(`[football-data] ${code}: previous season unavailable for now`, e);
+    return null;
+  }
+}
+
+async function withPreviousSeason(code: CompetitionCode, current: StoredCurrent, key: string): Promise<CompetitionData> {
+  const previous = (await previousSeason(code, key, true)) ?? [];
+  return { matches: [...previous, ...current.matches], source: "live", fetchedAt: current.fetchedAt };
+}
+
+/** Used by the scheduled refresher: refreshes the stalest competitions first. */
+export async function refreshStalest(maxRequests: number): Promise<string[]> {
+  const key = process.env.FOOTBALL_DATA_API_KEY;
+  if (!key) return ["no API key"];
+  const ages = await Promise.all(
+    COMPETITIONS.map(async (c) => {
+      const s = await readJSON<StoredCurrent>(currentKey(c.code));
+      return { code: c.code, age: s ? Date.now() - new Date(s.fetchedAt).getTime() : Infinity };
+    }),
+  );
+  ages.sort((a, b) => b.age - a.age);
+
+  const log: string[] = [];
+  let used = 0;
+  for (const { code, age } of ages) {
+    if (used >= maxRequests) break;
+    try {
+      if (!(await previousSeason(code, key, false))) {
+        used++;
+        await previousSeason(code, key, true);
+        if (used >= maxRequests) break;
+      }
+      used++;
+      await refreshCurrent(code, key);
+      log.push(`${code} refreshed (was ${age === Infinity ? "missing" : Math.round(age / 60_000) + " min old"})`);
+    } catch (e) {
+      log.push(`${code} failed: ${e instanceof Error ? e.message : e}`);
+      break; // Most likely rate-limited: stop and let the next run continue.
+    }
+  }
+  return log;
 }
 
 interface ApiTeam {
@@ -88,7 +164,7 @@ interface ApiMatch {
 async function fetchSeason(code: string, season: number, key: string): Promise<Match[]> {
   const res = await fetch(`https://api.football-data.org/v4/competitions/${code}/matches?season=${season}`, {
     headers: { "X-Auth-Token": key },
-    next: { revalidate: REVALIDATE_SECONDS },
+    cache: "no-store", // Freshness is managed by the stored copy (see FRESH_FOR_MS).
   });
   if (!res.ok) throw new Error(`football-data.org responded ${res.status} for ${code} ${season}`);
   const body = (await res.json()) as { matches?: ApiMatch[] };
