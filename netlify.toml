@@ -1,0 +1,5 @@
+# Next.js on Netlify: the OpenNext adapter (auto-installed) turns server-rendered
+# pages and /api routes into Netlify Functions.
+[build]
+  command = "npm run build"
+  publish = ".next"
