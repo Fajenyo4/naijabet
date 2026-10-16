@@ -150,3 +150,12 @@ button, input { font: inherit; color: inherit; }
 .nav-loading-msg { display: flex; align-items: center; gap: 2px; background: var(--green-soft); border: 1px solid rgba(0, 179, 107, 0.35); color: #7ee2b4; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
 main > * { transition: opacity 0.15s; }
 body:has(.nav-loading) main > :not(.tabs):not(.nav-loading):not(.loading) { opacity: 0.3; pointer-events: none; }
+@media (max-width: 480px) {
+  /* Fit the whole markets table (incl. odds input and value) on a phone without sideways scrolling. */
+  .markets { min-width: 0; font-size: 12px; }
+  .markets th { font-size: 10px; padding: 6px 2px; }
+  .markets td { padding: 6px 2px; }
+  .markets th:nth-child(3), .markets td:nth-child(3) { white-space: nowrap; }
+  .odds-in { width: 52px; padding: 3px 4px; font-size: 12px; }
+  .add { width: 24px; }
+}
